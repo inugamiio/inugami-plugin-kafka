@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- =======================================================================
+    = PARENT
+    ======================================================================== -->
+    <parent>
+        <groupId>org.inugami.maven.superpom</groupId>
+        <artifactId>inugami-superpom-plugin</artifactId>
+        <version>1.0.1-SNAPSHOT</version>
+    </parent>
+
+
+    <!-- =======================================================================
+    = PROJECT
+    ======================================================================== -->
+    <groupId>org.inugami.plugins</groupId>
+    <artifactId>inugami-plugin-kafka</artifactId>
+    <packaging>jar</packaging>
+    <version>0.0.1-SNAPSHOT</version>
+
+
+    <!-- =======================================================================
+    = PROPERTIES
+    ======================================================================== -->
+    <properties>
+        <super.env.dev />
+        <super.inugami.plugin />
+        <super.inugami.plugin.attach.war />
+        <super.inugami.server.force.clean>true</super.inugami.server.force.clean>
+        <super.inugami.version>1.1.1-SNAPSHOT</super.inugami.version>
+        <jaxb.version>2.3.0</jaxb.version>
+        <!-- specify in your maven settings.xml inugami server path :
+        <super.inugami.server.home>/home/user/servers/inugami</super.inugami.server.home>
+        -->
+    </properties>
+
+
+
+    <!-- =======================================================================
+    = SCM
+    ======================================================================== -->
+    <scm>
+        <url>https://github.com/inugamiio/inugami-plugin-kafka</url>
+        <connection>scm:git:git@github.com:inugamiio/inugami-plugin-kafka.git</connection>
+        <developerConnection>scm:git:git@github.com:inugamiio/inugami-plugin-kafka.git</developerConnection>
+        <tag>v0.0.0</tag>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>inugami-release</id>
+            <name>inugami-release</name>
+            <url>http://inugami.io/artifactory/inugami-release</url>
+        </repository>
+        <snapshotRepository>
+            <id>inugami-snapshot</id>
+            <name>inugami-snapshot</name>
+            <url>http://inugami.io/artifactory/inugami-snapshot</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+
+    <!-- =======================================================================
+    = REPOSITORIES
+    ======================================================================== -->
+    <repositories>
+        <repository>
+            <id>inugami-release</id>
+            <name>inugami-release</name>
+            <url>http://inugami.io/artifactory/inugami-release</url>
+        </repository>
+        <repository>
+            <id>inugami-snapshot</id>
+            <name>inugami-snapshot</name>
+            <url>http://inugami.io/artifactory/inugami-snapshot</url>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>inugami-release</id>
+            <name>inugami-release</name>
+            <url>http://inugami.io/artifactory/inugami-release</url>
+        </pluginRepository>
+    </pluginRepositories>
+    
+    <!-- =======================================================================
+    = DEPENDENCIES
+    ======================================================================== -->
+    <dependencies>
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>${jaxb.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-core</artifactId>
+            <version>${jaxb.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>${jaxb.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.inugami.monitoring</groupId>
+            <artifactId>inugami_monitoring</artifactId>
+            <version>${super.inugami.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+
+
+</project>
