@@ -1,5 +1,6 @@
 package org.inugami.plugins.kafka.services;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -16,35 +17,43 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.inugami.api.ctx.BootstrapContext;
+import org.inugami.api.ctx.DynamicEventProcessor;
 import org.inugami.api.functionnals.ApplyIfNotNull;
-import org.inugami.plugins.kafka.KafkaResultEvent;
+import org.inugami.commons.spi.SpiLoader;
 import org.inugami.plugins.kafka.provider.KafkaProviderHandler;
+import org.inugami.plugins.kafka.provider.KafkaResultEvent;
 
 public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIfNotNull {
     // =========================================================================
     // ATTRIBUTES
     // =========================================================================
-    private boolean                    consume = true;
+    private boolean                     consume = true;
     
-    private final String               providerName;
+    private final String                providerName;
     
-    private final Properties           properties;
+    private final Properties            properties;
     
-    private final KafkaConfig          config;
+    private final KafkaConfig           config;
     
-    private Consumer<Long, String>     consumer;
+    private Consumer<Long, String>      consumer;
     
-    private final KafkaProviderHandler providerHandler;
+    private final KafkaProviderHandler  providerHandler;
+    
+    private final DynamicEventProcessor dynamicEventProcessor;
+    
+    private final String                defaultChannel;
     
     // =========================================================================
     // CONSTRUCTORS
     // =========================================================================
-    public KafkaService(final KafkaConfig config, final String providerName,
+    public KafkaService(final KafkaConfig config, final String providerName, final String defaultChannel,
                         final KafkaProviderHandler providerHandler) {
         this.config = config;
         this.providerName = providerName;
         properties = buildProperties(config);
         this.providerHandler = providerHandler;
+        this.defaultChannel = defaultChannel;
+        dynamicEventProcessor = new SpiLoader().loadSpiSingleService(DynamicEventProcessor.class);
     }
     
     // =========================================================================
@@ -62,7 +71,7 @@ public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIf
         //@formatter:off
         applyIfNotNull(config.getGroupInstanceId()                 , (value)->props.put(ConsumerConfig.GROUP_INSTANCE_ID_CONFIG,value));
         applyIfNotNull(config.getMaxPoolRecords()                  , (value)->props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG,value));
-        applyIfNotNull(config.getMaxPoolInterval()                 , (value)->props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG,value));
+        applyIfNotNull(config.getMaxPoolInterval()                 , (value)->props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG,value));
         applyIfNotNull(config.getSessionTimeout()                  , (value)->props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG,value));
         applyIfNotNull(config.getHeartBeatMs()                     , (value)->props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG,value));
         applyIfNotNull(config.getEnableAutoCommit()                , (value)->props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,value));
@@ -138,14 +147,18 @@ public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIf
     private void consume() {
         
         while (consume) {
-            final ConsumerRecords<Long, String> consumerRecords = consumer.poll(1000);
+            final ConsumerRecords<Long, String> consumerRecords = consumer.poll(Duration.ofMillis(config.getMaxPoolInterval()));
             
             final Iterator<ConsumerRecord<Long, String>> records = consumerRecords.iterator();
             
             while (records.hasNext()) {
                 final ConsumerRecord<Long, String> record = records.next();
-                final List<KafkaResultEvent> providerResults = providerHandler.convertToEvents(providerName, record);
-                // TODO : send to ApplicationContext
+                final List<KafkaResultEvent> providerResults = providerHandler.convertToEvents(providerName, record,defaultChannel);
+                
+                for (final KafkaResultEvent resultSet : providerResults) {
+                    dynamicEventProcessor.process(resultSet.getEvent(), resultSet.getProviderResult(),
+                                                  resultSet.getChannel());
+                }
             }
             
             consumer.commitAsync();

@@ -15,8 +15,23 @@ Also contains monitoring producer who send data to Kafka topic.
 |===
 |Property key| Require | type | default value | description 
 |providerHandler
+|
 |`defaultKafkaProviderHandler`
 |SPI component name who implement `org.inugami.plugins.kafka.provider.KafkaProviderHandler` interface.
+
+|defaultChannel
+|
+|`globale`
+|Allow to define default SSE channel
+
+
+|escapeJson
+|
+|`false`
+|Allow to escape JSON quot from kafka message
+
+
+
 
 
 |bootstrapServers

@@ -100,10 +100,12 @@ public class KafkaProvider extends AbstractProvider implements Provider, Provide
             providerHandler = spiLoader.loadSpiService(providerHandlerName, KafkaProviderHandler.class);
         }
         if (providerHandler == null) {
-            providerHandler = new DefaultKafkaProviderHandler();
+            providerHandler = new DefaultKafkaProviderHandler(config.grabBoolean("escapeJson", false));
         }
         
-        this.kafkaService = new KafkaService(builder.build(), getName(), providerHandler);
+        final String defaultChannel = config.grabOrDefault("defaultChannel", "globale");
+        
+        this.kafkaService = new KafkaService(builder.build(), getName(), defaultChannel, providerHandler);
     }
     
     // =========================================================================
