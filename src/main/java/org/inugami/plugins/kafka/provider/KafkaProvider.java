@@ -77,6 +77,20 @@ public class KafkaProvider extends AbstractProvider implements Provider, Provide
         builder.setIsolationLevel(config.optionnal().grab("isolationLevel"));
         builder.setAllowAutoCreateTopics(config.optionnal().grabBoolean("allowAutoCreateTopics", true));
         
+        /* PRODUCER */
+        builder.setBatchSize(config.optionnal().grabInt("batchSize", 16384));
+        builder.setAcks(config.optionnal().grab("acks", "1"));
+        builder.setLingerMs(config.optionnal().grabLong("lingerMs", 0L));
+        builder.setDeliveryTimeoutMs(config.optionnal().grabInt("deliveryTimeoutMs", 120000));
+        builder.setMaxRequestSize(config.optionnal().grabInt("maxRequestSize", 1048576));
+        builder.setMaxBlockMs(config.optionnal().grabLong("maxBlockMs", 60000));
+        builder.setBufferMemory(config.optionnal().grabLong("bufferMemory", 33554432));
+        builder.setCompressionType(config.optionnal().grab("compressionType", "none"));
+        builder.setMaxInFlightRequestsPerConnection(config.optionnal().grabInt("maxInFlightRequestsPerConnection", 5));
+        builder.setRetries(config.optionnal().grabInt("retries", 50));
+        builder.setEnableIdempotence(config.optionnal().grabBoolean("enableIdempotence", false));
+        builder.setTransactionTimeout(config.optionnal().grabInt("transactionTimeout", 60000));
+        builder.setTransactionalId(config.optionnal().grab("transactionId"));
         this.kafkaService = new KafkaService(builder.build());
     }
     

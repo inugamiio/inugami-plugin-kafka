@@ -81,24 +81,56 @@ public class KafkaConfig {
     
     private final Boolean allowAutoCreateTopics;
     
+    /* PRODUCER */
+    private final Integer batchSize;
+    
+    private final String  acks;
+    
+    private final Long    lingerMs;
+    
+    private final Integer deliveryTimeoutMs;
+    
+    private final Integer maxRequestSize;
+    
+    private final Long    maxBlockMs;
+    
+    private final Long    bufferMemory;
+    
+    private final String  compressionType;
+    
+    private final Integer maxInFlightRequestsPerConnection;
+    
+    private final Integer retries;
+    
+    private final Boolean enableIdempotence;
+    
+    private final Integer transactionTimeout;
+    
+    private final String  transactionalId;
+    
     // =========================================================================
     // CONSTRUCTORS
     // =========================================================================
-    protected KafkaConfig(final String bootstrapServers, final String groupId, final Class<?> keyDeserializer,
-                          final Class<?> valueDeserializer, final String topic, final long timeout,
-                          final String groupInstanceId, final Integer maxPoolRecords, final Integer maxPoolInterval,
-                          final Integer sessionTimeout, final Integer heartBeatMs, final Boolean enableAutoCommit,
-                          final Integer autoComitIntervalMs, final String partitionAssignmentStrategy,
-                          final String autoOffsetRest, final Integer fetchMinBytes, final Integer fetchMaxBytes,
-                          final Integer fetchMaxWaitMs, final Long metadataMaxAge, final Integer maxPartitionFetchBytes,
-                          final Integer sendBuffer, final Integer receiveBuffer, final String clientId,
-                          final String clientRack, final Long reconnectBackoffMs, final Long retryBackoff,
-                          final Long metricSampleWindowMs, final Long metricNumSamples,
-                          final String metricsRecordingLevel, final Boolean checkCrcs, final Long connectionsMaxIdleMs,
-                          final Integer requestTimeoutMs, final Integer defaultApiTimeoutMs,
-                          final Boolean excludeInternalTopics, final Boolean defaultExcludeInternalTopics,
-                          final Boolean leaveGroupOnClose, final String isolationLevel,
-                          final Boolean allowAutoCreateTopics) {
+    /* package */ KafkaConfig(final String bootstrapServers, final String groupId, final Class<?> keyDeserializer,
+                              final Class<?> valueDeserializer, final String topic, final long timeout,
+                              final String groupInstanceId, final Integer maxPoolRecords, final Integer maxPoolInterval,
+                              final Integer sessionTimeout, final Integer heartBeatMs, final Boolean enableAutoCommit,
+                              final Integer autoComitIntervalMs, final String partitionAssignmentStrategy,
+                              final String autoOffsetRest, final Integer fetchMinBytes, final Integer fetchMaxBytes,
+                              final Integer fetchMaxWaitMs, final Long metadataMaxAge,
+                              final Integer maxPartitionFetchBytes, final Integer sendBuffer,
+                              final Integer receiveBuffer, final String clientId, final String clientRack,
+                              final Long reconnectBackoffMs, final Long retryBackoff, final Long metricSampleWindowMs,
+                              final Long metricNumSamples, final String metricsRecordingLevel, final Boolean checkCrcs,
+                              final Long connectionsMaxIdleMs, final Integer requestTimeoutMs,
+                              final Integer defaultApiTimeoutMs, final Boolean excludeInternalTopics,
+                              final Boolean defaultExcludeInternalTopics, final Boolean leaveGroupOnClose,
+                              final String isolationLevel, final Boolean allowAutoCreateTopics, final Integer batchSize,
+                              final String acks, final Long lingerMs, final Integer deliveryTimeoutMs,
+                              final Integer maxRequestSize, final Long maxBlockMs, final Long bufferMemory,
+                              final String compressionType, final Integer maxInFlightRequestsPerConnection,
+                              final Integer retries, final Boolean enableIdempotence, final Integer transactionTimeout,
+                              final String transactionalId) {
         super();
         this.bootstrapServers = bootstrapServers;
         this.groupId = groupId;
@@ -138,11 +170,25 @@ public class KafkaConfig {
         this.leaveGroupOnClose = leaveGroupOnClose;
         this.isolationLevel = isolationLevel;
         this.allowAutoCreateTopics = allowAutoCreateTopics;
+        this.batchSize = batchSize;
+        this.acks = acks;
+        this.lingerMs = lingerMs;
+        this.deliveryTimeoutMs = deliveryTimeoutMs;
+        this.maxRequestSize = maxRequestSize;
+        this.maxBlockMs = maxBlockMs;
+        this.bufferMemory = bufferMemory;
+        this.compressionType = compressionType;
+        this.maxInFlightRequestsPerConnection = maxInFlightRequestsPerConnection;
+        this.retries = retries;
+        this.enableIdempotence = enableIdempotence;
+        this.transactionTimeout = transactionTimeout;
+        this.transactionalId = transactionalId;
     }
     
     // =========================================================================
     // OVERRIDES
     // =========================================================================
+    
     @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder();
@@ -158,6 +204,96 @@ public class KafkaConfig {
         builder.append(topic);
         builder.append(", timeout=");
         builder.append(timeout);
+        builder.append(", groupInstanceId=");
+        builder.append(groupInstanceId);
+        builder.append(", maxPoolRecords=");
+        builder.append(maxPoolRecords);
+        builder.append(", maxPoolInterval=");
+        builder.append(maxPoolInterval);
+        builder.append(", sessionTimeout=");
+        builder.append(sessionTimeout);
+        builder.append(", heartBeatMs=");
+        builder.append(heartBeatMs);
+        builder.append(", enableAutoCommit=");
+        builder.append(enableAutoCommit);
+        builder.append(", autoComitIntervalMs=");
+        builder.append(autoComitIntervalMs);
+        builder.append(", partitionAssignmentStrategy=");
+        builder.append(partitionAssignmentStrategy);
+        builder.append(", autoOffsetRest=");
+        builder.append(autoOffsetRest);
+        builder.append(", fetchMinBytes=");
+        builder.append(fetchMinBytes);
+        builder.append(", fetchMaxBytes=");
+        builder.append(fetchMaxBytes);
+        builder.append(", fetchMaxWaitMs=");
+        builder.append(fetchMaxWaitMs);
+        builder.append(", metadataMaxAge=");
+        builder.append(metadataMaxAge);
+        builder.append(", maxPartitionFetchBytes=");
+        builder.append(maxPartitionFetchBytes);
+        builder.append(", sendBuffer=");
+        builder.append(sendBuffer);
+        builder.append(", receiveBuffer=");
+        builder.append(receiveBuffer);
+        builder.append(", clientId=");
+        builder.append(clientId);
+        builder.append(", clientRack=");
+        builder.append(clientRack);
+        builder.append(", reconnectBackoffMs=");
+        builder.append(reconnectBackoffMs);
+        builder.append(", retryBackoff=");
+        builder.append(retryBackoff);
+        builder.append(", metricSampleWindowMs=");
+        builder.append(metricSampleWindowMs);
+        builder.append(", metricNumSamples=");
+        builder.append(metricNumSamples);
+        builder.append(", metricsRecordingLevel=");
+        builder.append(metricsRecordingLevel);
+        builder.append(", checkCrcs=");
+        builder.append(checkCrcs);
+        builder.append(", connectionsMaxIdleMs=");
+        builder.append(connectionsMaxIdleMs);
+        builder.append(", requestTimeoutMs=");
+        builder.append(requestTimeoutMs);
+        builder.append(", defaultApiTimeoutMs=");
+        builder.append(defaultApiTimeoutMs);
+        builder.append(", excludeInternalTopics=");
+        builder.append(excludeInternalTopics);
+        builder.append(", defaultExcludeInternalTopics=");
+        builder.append(defaultExcludeInternalTopics);
+        builder.append(", leaveGroupOnClose=");
+        builder.append(leaveGroupOnClose);
+        builder.append(", isolationLevel=");
+        builder.append(isolationLevel);
+        builder.append(", allowAutoCreateTopics=");
+        builder.append(allowAutoCreateTopics);
+        builder.append(", batchSize=");
+        builder.append(batchSize);
+        builder.append(", acks=");
+        builder.append(acks);
+        builder.append(", lingerMs=");
+        builder.append(lingerMs);
+        builder.append(", deliveryTimeoutMs=");
+        builder.append(deliveryTimeoutMs);
+        builder.append(", maxRequestSize=");
+        builder.append(maxRequestSize);
+        builder.append(", maxBlockMs=");
+        builder.append(maxBlockMs);
+        builder.append(", bufferMemory=");
+        builder.append(bufferMemory);
+        builder.append(", compressionType=");
+        builder.append(compressionType);
+        builder.append(", maxInFlightRequestsPerConnection=");
+        builder.append(maxInFlightRequestsPerConnection);
+        builder.append(", retries=");
+        builder.append(retries);
+        builder.append(", enableIdempotence=");
+        builder.append(enableIdempotence);
+        builder.append(", transactionTimeout=");
+        builder.append(transactionTimeout);
+        builder.append(", transactionalId=");
+        builder.append(transactionalId);
         builder.append("]");
         return builder.toString();
     }
@@ -316,6 +452,58 @@ public class KafkaConfig {
     
     public Boolean getAllowAutoCreateTopics() {
         return allowAutoCreateTopics;
+    }
+    
+    public Integer getBatchSize() {
+        return batchSize;
+    }
+    
+    public String getAcks() {
+        return acks;
+    }
+    
+    public Long getLingerMs() {
+        return lingerMs;
+    }
+    
+    public Integer getDeliveryTimeoutMs() {
+        return deliveryTimeoutMs;
+    }
+    
+    public Integer getMaxRequestSize() {
+        return maxRequestSize;
+    }
+    
+    public Long getMaxBlockMs() {
+        return maxBlockMs;
+    }
+    
+    public Long getBufferMemory() {
+        return bufferMemory;
+    }
+    
+    public String getCompressionType() {
+        return compressionType;
+    }
+    
+    public Integer getMaxInFlightRequestsPerConnection() {
+        return maxInFlightRequestsPerConnection;
+    }
+    
+    public Integer getRetries() {
+        return retries;
+    }
+    
+    public Boolean getEnableIdempotence() {
+        return enableIdempotence;
+    }
+    
+    public Integer getTransactionTimeout() {
+        return transactionTimeout;
+    }
+    
+    public String getTransactionalId() {
+        return transactionalId;
     }
     
 }

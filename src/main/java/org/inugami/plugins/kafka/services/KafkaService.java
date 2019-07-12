@@ -12,23 +12,22 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.serialization.LongDeserializer;
-import org.apache.kafka.common.serialization.LongSerializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.inugami.api.ctx.BootstrapContext;
+import org.inugami.api.functionnals.ApplyIfNotNull;
 
-public class KafkaService implements Runnable, BootstrapContext<Object> {
+public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIfNotNull {
     // =========================================================================
     // ATTRIBUTES
     // =========================================================================
-    private final static String BOOTSTRAP_SERVERS = "localhost:9092";
+    private final static String    BOOTSTRAP_SERVERS = "localhost:9092";
     
-    private boolean             consume           = true;
+    private boolean                consume           = true;
     
-    private final Properties    properties;
+    private final Properties       properties;
     
-    private final KafkaConfig   config;
+    private final KafkaConfig      config;
+    
+    private Consumer<Long, String> consumer;
     
     // =========================================================================
     // CONSTRUCTORS
@@ -43,49 +42,65 @@ public class KafkaService implements Runnable, BootstrapContext<Object> {
     // =========================================================================
     private Properties buildProperties(final KafkaConfig config) {
         final Properties props = new Properties();
-
         
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,config.getBootstrapServers());
-        props.put(ConsumerConfig.GROUP_ID_CONFIG,config.getGroupId());
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,config.getKeyDeserializer());
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,config.getValueDeserializer());
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, config.getBootstrapServers());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, config.getGroupId());
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, config.getKeyDeserializer());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, config.getValueDeserializer());
         
-      
-
         /* OPTIONAL */
-        config.getGroupInstanceId()
-        config.getMaxPoolRecords()
-        config.getMaxPoolInterval()
-        config.getSessionTimeout()
-        config.getHeartBeatMs()
-        config.getEnableAutoCommit()
-        config.getAutoComitIntervalMs()
-        config.getPartitionAssignmentStrategy()
-        config.getAutoOffsetRest()
-        config.getFetchMinBytes()
-        config.getFetchMaxBytes()
-        config.getFetchMaxWaitMs()
-        config.getMetadataMaxAge()
-        config.getMaxPartitionFetchBytes()
-        config.getSendBuffer()
-        config.getReceiveBuffer()
-        props.put(ProducerConfig.CLIENT_ID_CONFIG, config.getClientId());
+        //@formatter:off
+        applyIfNotNull(config.getGroupInstanceId()                 , (value)->props.put(ConsumerConfig.GROUP_INSTANCE_ID_CONFIG,value));
+        applyIfNotNull(config.getMaxPoolRecords()                  , (value)->props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG,value));
+        applyIfNotNull(config.getMaxPoolInterval()                 , (value)->props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG,value));
+        applyIfNotNull(config.getSessionTimeout()                  , (value)->props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG,value));
+        applyIfNotNull(config.getHeartBeatMs()                     , (value)->props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG,value));
+        applyIfNotNull(config.getEnableAutoCommit()                , (value)->props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,value));
+        applyIfNotNull(config.getAutoComitIntervalMs()             , (value)->props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG,value));
+        applyIfNotNull(config.getPartitionAssignmentStrategy()     , (value)->props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG,value));
+        applyIfNotNull(config.getAutoOffsetRest()                  , (value)->props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,value));
+        applyIfNotNull(config.getFetchMinBytes()                   , (value)->props.put(ConsumerConfig.FETCH_MIN_BYTES_CONFIG,value));
+        applyIfNotNull(config.getFetchMaxBytes()                   , (value)->props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG,value));
+        applyIfNotNull(config.getFetchMaxWaitMs()                  , (value)->props.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG,value));
+        applyIfNotNull(config.getMetadataMaxAge()                  , (value)->props.put(ConsumerConfig.METADATA_MAX_AGE_CONFIG,value));
+        applyIfNotNull(config.getMaxPartitionFetchBytes()          , (value)->props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG,value));
+        applyIfNotNull(config.getSendBuffer()                      , (value)->props.put(ConsumerConfig.SEND_BUFFER_CONFIG,value));
+        applyIfNotNull(config.getReceiveBuffer()                   , (value)->props.put(ConsumerConfig.RECEIVE_BUFFER_CONFIG,value));
+        applyIfNotNull(config.getClientId()                        , (value)->props.put(ConsumerConfig.CLIENT_ID_CONFIG,value));
+
+        applyIfNotNull(config.getClientRack()                      , (value)->props.put(ConsumerConfig.CLIENT_RACK_CONFIG,value));
+        applyIfNotNull(config.getReconnectBackoffMs()              , (value)->props.put(ConsumerConfig.RECONNECT_BACKOFF_MAX_MS_CONFIG,value));
+        applyIfNotNull(config.getRetryBackoff()                    , (value)->props.put(ConsumerConfig.RETRY_BACKOFF_MS_CONFIG,value));
+        applyIfNotNull(config.getMetricSampleWindowMs()            , (value)->props.put(ConsumerConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG,value));
+        applyIfNotNull(config.getMetricNumSamples()                , (value)->props.put(ConsumerConfig.METRICS_NUM_SAMPLES_CONFIG,value));
+        applyIfNotNull(config.getMetricsRecordingLevel()           , (value)->props.put(ConsumerConfig.METRICS_RECORDING_LEVEL_CONFIG,value));
+        applyIfNotNull(config.getCheckCrcs()                       , (value)->props.put(ConsumerConfig.CHECK_CRCS_CONFIG,value));
+        applyIfNotNull(config.getConnectionsMaxIdleMs()            , (value)->props.put(ConsumerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG,value));
+        applyIfNotNull(config.getRequestTimeoutMs()                , (value)->props.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG,value));
+        applyIfNotNull(config.getDefaultApiTimeoutMs()             , (value)->props.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG,value));
+        applyIfNotNull(config.getExcludeInternalTopics()           , (value)->props.put(ConsumerConfig.EXCLUDE_INTERNAL_TOPICS_CONFIG,value));
+        applyIfNotNull(config.getDefaultExcludeInternalTopics()    , (value)->props.put(ConsumerConfig.DEFAULT_EXCLUDE_INTERNAL_TOPICS,value));
+        applyIfNotNull(config.getLeaveGroupOnClose()               , (value)->props.put("internal.leave.group.on.close",value));
+        applyIfNotNull(config.getIsolationLevel()                  , (value)->props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG,value));
+        applyIfNotNull(config.getAllowAutoCreateTopics()           , (value)->props.put(ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG,value));
+       
         
-        config.getClientRack()
-        config.getReconnectBackoffMs()
-        config.getRetryBackoff()
-        config.getMetricSampleWindowMs()
-        config.getMetricNumSamples()
-        config.getMetricsRecordingLevel()
-        config.getCheckCrcs()
-        config.getConnectionsMaxIdleMs()
-        config.getRequestTimeoutMs()
-        config.getDefaultApiTimeoutMs()
-        config.getExcludeInternalTopics()
-        config.getDefaultExcludeInternalTopics()
-        config.getLeaveGroupOnClose()
-        config.getIsolationLevel()
-        config.getAllowAutoCreateTopics()
+        /* OPTIONAL PRODUCER */
+        applyIfNotNull(config.getBatchSize()                         , (value)->props.put(ProducerConfig.BATCH_SIZE_CONFIG, value));
+        applyIfNotNull(config.getAcks()                              , (value)->props.put(ProducerConfig.ACKS_CONFIG, value));
+        applyIfNotNull(config.getLingerMs()                          , (value)->props.put(ProducerConfig.LINGER_MS_CONFIG, value));
+        applyIfNotNull(config.getDeliveryTimeoutMs()                 , (value)->props.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, value));
+        applyIfNotNull(config.getMaxRequestSize()                    , (value)->props.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, value));
+        applyIfNotNull(config.getMaxBlockMs()                        , (value)->props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, value));
+        applyIfNotNull(config.getBufferMemory()                      , (value)->props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, value));
+        applyIfNotNull(config.getCompressionType()                   , (value)->props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, value));
+        applyIfNotNull(config.getMaxInFlightRequestsPerConnection()  , (value)->props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, value));
+        applyIfNotNull(config.getRetries()                           , (value)->props.put(ProducerConfig.RETRIES_CONFIG, value));
+        applyIfNotNull(config.getEnableIdempotence()                 , (value)->props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, value));
+        applyIfNotNull(config.getTransactionTimeout()                , (value)->props.put(ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, value));
+        applyIfNotNull(config.getTransactionalId()                   , (value)->props.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, value));
+        
+        //@formatter:on
         
         return props;
     }
@@ -95,21 +110,21 @@ public class KafkaService implements Runnable, BootstrapContext<Object> {
     // =========================================================================
     @Override
     public void run() {
-        consume();
         
     }
     
     @Override
     public void shutdown(final Object ctx) {
         consume = false;
+        if (consumer != null) {
+            consumer.close();
+        }
     }
     
     // =========================================================================
     // CONSUMER
     // =========================================================================
     private void consume() {
-        
-        final Consumer<Long, String> consumer = createConsumer();
         
         final int giveUp = 100;
         int noRecordsCount = 0;
@@ -132,18 +147,12 @@ public class KafkaService implements Runnable, BootstrapContext<Object> {
             
             consumer.commitAsync();
         }
-        consumer.close();
-        System.out.println("DONE");
+        
     }
     
-    private Consumer<Long, String> createConsumer() {
-        
-        // Create the consumer using props.
-        final Consumer<Long, String> consumer = new KafkaConsumer<>(properties);
-        
-        // Subscribe to the topic.
-        consumer.subscribe(Collections.singletonList("test"));
-        return consumer;
+    public void createConsumer() {
+        consumer = new KafkaConsumer<>(properties);
+        consumer.subscribe(Collections.singletonList(config.getTopic()));
     }
     
     // =========================================================================

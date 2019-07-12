@@ -94,6 +94,33 @@ public class KafkaConfigBuilder {
     
     private Boolean allowAutoCreateTopics;
     
+    /* PRODUCER */
+    private Integer batchSize;
+    
+    private String  acks;
+    
+    private Long    lingerMs;
+    
+    private Integer deliveryTimeoutMs;
+    
+    private Integer maxRequestSize;
+    
+    private Long    maxBlockMs;
+    
+    private Long    bufferMemory;
+    
+    private String  compressionType;
+    
+    private Integer maxInFlightRequestsPerConnection;
+    
+    private Integer retries;
+    
+    private Boolean enableIdempotence;
+    
+    private Integer transactionTimeout;
+    
+    private String  transactionalId;
+    
     //@formatter:off
     private final static Class<?>[] DESERIALIZERS = {
               ByteArrayDeserializer.class,
@@ -151,7 +178,20 @@ public class KafkaConfigBuilder {
                                defaultExcludeInternalTopics,
                                leaveGroupOnClose,
                                isolationLevel,
-                               allowAutoCreateTopics);
+                               allowAutoCreateTopics,
+                               batchSize,
+                               acks,
+                               lingerMs,
+                               deliveryTimeoutMs,
+                               maxRequestSize,
+                               maxBlockMs,
+                               bufferMemory,
+                               compressionType,
+                               maxInFlightRequestsPerConnection,
+                               retries,
+                               enableIdempotence,
+                               transactionTimeout,
+                               transactionalId);
        //@formatter:on
     }
     
@@ -179,10 +219,10 @@ public class KafkaConfigBuilder {
         
         return result;
     }
+    
     // =========================================================================
     // OVERRIDES
     // =========================================================================
-    
     @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder();
@@ -262,6 +302,32 @@ public class KafkaConfigBuilder {
         builder.append(isolationLevel);
         builder.append(", allowAutoCreateTopics=");
         builder.append(allowAutoCreateTopics);
+        builder.append(", batchSize=");
+        builder.append(batchSize);
+        builder.append(", acks=");
+        builder.append(acks);
+        builder.append(", lingerMs=");
+        builder.append(lingerMs);
+        builder.append(", deliveryTimeoutMs=");
+        builder.append(deliveryTimeoutMs);
+        builder.append(", maxRequestSize=");
+        builder.append(maxRequestSize);
+        builder.append(", maxBlockMs=");
+        builder.append(maxBlockMs);
+        builder.append(", bufferMemory=");
+        builder.append(bufferMemory);
+        builder.append(", compressionType=");
+        builder.append(compressionType);
+        builder.append(", maxInFlightRequestsPerConnection=");
+        builder.append(maxInFlightRequestsPerConnection);
+        builder.append(", retries=");
+        builder.append(retries);
+        builder.append(", enableIdempotence=");
+        builder.append(enableIdempotence);
+        builder.append(", transactionTimeout=");
+        builder.append(transactionTimeout);
+        builder.append(", transactionalId=");
+        builder.append(transactionalId);
         builder.append("]");
         return builder.toString();
     }
@@ -614,4 +680,122 @@ public class KafkaConfigBuilder {
         this.allowAutoCreateTopics = allowAutoCreateTopics;
         return this;
     }
+    
+    public Integer getBatchSize() {
+        return batchSize;
+    }
+    
+    public KafkaConfigBuilder setBatchSize(final Integer batchSize) {
+        this.batchSize = batchSize;
+        return this;
+    }
+    
+    public String getAcks() {
+        return acks;
+    }
+    
+    public KafkaConfigBuilder setAcks(final String acks) {
+        this.acks = acks;
+        return this;
+    }
+    
+    public Long getLingerMs() {
+        return lingerMs;
+    }
+    
+    public KafkaConfigBuilder setLingerMs(final Long lingerMs) {
+        this.lingerMs = lingerMs;
+        return this;
+    }
+    
+    public Integer getDeliveryTimeoutMs() {
+        return deliveryTimeoutMs;
+    }
+    
+    public KafkaConfigBuilder setDeliveryTimeoutMs(final Integer deliveryTimeoutMs) {
+        this.deliveryTimeoutMs = deliveryTimeoutMs;
+        return this;
+    }
+    
+    public Integer getMaxRequestSize() {
+        return maxRequestSize;
+    }
+    
+    public KafkaConfigBuilder setMaxRequestSize(final Integer maxRequestSize) {
+        this.maxRequestSize = maxRequestSize;
+        return this;
+    }
+    
+    public Long getMaxBlockMs() {
+        return maxBlockMs;
+    }
+    
+    public KafkaConfigBuilder setMaxBlockMs(final Long maxBlockMs) {
+        this.maxBlockMs = maxBlockMs;
+        return this;
+    }
+    
+    public Long getBufferMemory() {
+        return bufferMemory;
+    }
+    
+    public KafkaConfigBuilder setBufferMemory(final Long bufferMemory) {
+        this.bufferMemory = bufferMemory;
+        return this;
+    }
+    
+    public String getCompressionType() {
+        return compressionType;
+    }
+    
+    public KafkaConfigBuilder setCompressionType(final String compressionType) {
+        this.compressionType = compressionType;
+        return this;
+    }
+    
+    public Integer getMaxInFlightRequestsPerConnection() {
+        return maxInFlightRequestsPerConnection;
+    }
+    
+    public KafkaConfigBuilder setMaxInFlightRequestsPerConnection(final Integer maxInFlightRequestsPerConnection) {
+        this.maxInFlightRequestsPerConnection = maxInFlightRequestsPerConnection;
+        return this;
+    }
+    
+    public Integer getRetries() {
+        return retries;
+    }
+    
+    public KafkaConfigBuilder setRetries(final Integer retries) {
+        this.retries = retries;
+        return this;
+    }
+    
+    public Boolean getEnableIdempotence() {
+        return enableIdempotence;
+    }
+    
+    public KafkaConfigBuilder setEnableIdempotence(final Boolean enableIdempotence) {
+        this.enableIdempotence = enableIdempotence;
+        return this;
+    }
+    
+    public Integer getTransactionTimeout() {
+        return transactionTimeout;
+    }
+    
+    public KafkaConfigBuilder setTransactionTimeout(final Integer transactionTimeout) {
+        this.transactionTimeout = transactionTimeout;
+        return this;
+    }
+    
+    public String getTransactionalId() {
+        return transactionalId;
+    }
+    
+    public KafkaConfigBuilder setTransactionalId(final String transactionalId) {
+        this.transactionalId = transactionalId;
+        return this;
+    }
+    
 }
