@@ -16,6 +16,7 @@ import org.inugami.api.providers.ProviderWriter;
 import org.inugami.api.providers.concurrent.FutureData;
 import org.inugami.api.providers.task.ProviderFutureResult;
 import org.inugami.commons.providers.MockJsonHelper;
+import org.inugami.commons.spi.SpiLoader;
 import org.inugami.plugins.kafka.services.KafkaConfigBuilder;
 import org.inugami.plugins.kafka.services.KafkaService;
 
@@ -91,7 +92,18 @@ public class KafkaProvider extends AbstractProvider implements Provider, Provide
         builder.setEnableIdempotence(config.optionnal().grabBoolean("enableIdempotence", false));
         builder.setTransactionTimeout(config.optionnal().grabInt("transactionTimeout", 60000));
         builder.setTransactionalId(config.optionnal().grab("transactionId"));
-        this.kafkaService = new KafkaService(builder.build());
+        
+        final SpiLoader spiLoader = new SpiLoader();
+        final String providerHandlerName = config.optionnal().grab("providerHandler");
+        KafkaProviderHandler providerHandler = null;
+        if (providerHandlerName != null) {
+            providerHandler = spiLoader.loadSpiService(providerHandlerName, KafkaProviderHandler.class);
+        }
+        if (providerHandler == null) {
+            providerHandler = new DefaultKafkaProviderHandler();
+        }
+        
+        this.kafkaService = new KafkaService(builder.build(), getName(), providerHandler);
     }
     
     // =========================================================================

@@ -1,10 +1,13 @@
 package org.inugami.plugins.kafka.services;
 
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -14,27 +17,34 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.inugami.api.ctx.BootstrapContext;
 import org.inugami.api.functionnals.ApplyIfNotNull;
+import org.inugami.plugins.kafka.KafkaResultEvent;
+import org.inugami.plugins.kafka.provider.KafkaProviderHandler;
 
 public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIfNotNull {
     // =========================================================================
     // ATTRIBUTES
     // =========================================================================
-    private final static String    BOOTSTRAP_SERVERS = "localhost:9092";
+    private boolean                    consume = true;
     
-    private boolean                consume           = true;
+    private final String               providerName;
     
-    private final Properties       properties;
+    private final Properties           properties;
     
-    private final KafkaConfig      config;
+    private final KafkaConfig          config;
     
-    private Consumer<Long, String> consumer;
+    private Consumer<Long, String>     consumer;
+    
+    private final KafkaProviderHandler providerHandler;
     
     // =========================================================================
     // CONSTRUCTORS
     // =========================================================================
-    public KafkaService(final KafkaConfig config) {
+    public KafkaService(final KafkaConfig config, final String providerName,
+                        final KafkaProviderHandler providerHandler) {
         this.config = config;
+        this.providerName = providerName;
         properties = buildProperties(config);
+        this.providerHandler = providerHandler;
     }
     
     // =========================================================================
@@ -110,7 +120,8 @@ public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIf
     // =========================================================================
     @Override
     public void run() {
-        
+        createConsumer();
+        consume();
     }
     
     @Override
@@ -126,24 +137,16 @@ public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIf
     // =========================================================================
     private void consume() {
         
-        final int giveUp = 100;
-        int noRecordsCount = 0;
-        
         while (consume) {
             final ConsumerRecords<Long, String> consumerRecords = consumer.poll(1000);
             
-            if (consumerRecords.count() == 0) {
-                noRecordsCount++;
-                if (noRecordsCount > giveUp)
-                    break;
-                else
-                    continue;
-            }
+            final Iterator<ConsumerRecord<Long, String>> records = consumerRecords.iterator();
             
-            consumerRecords.forEach(record -> {
-                System.out.printf("Consumer Record:(%d, %s, %d, %d)\n", record.key(), record.value(),
-                                  record.partition(), record.offset());
-            });
+            while (records.hasNext()) {
+                final ConsumerRecord<Long, String> record = records.next();
+                final List<KafkaResultEvent> providerResults = providerHandler.convertToEvents(providerName, record);
+                // TODO : send to ApplicationContext
+            }
             
             consumer.commitAsync();
         }
@@ -151,8 +154,11 @@ public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIf
     }
     
     public void createConsumer() {
-        consumer = new KafkaConsumer<>(properties);
-        consumer.subscribe(Collections.singletonList(config.getTopic()));
+        if (consumer == null) {
+            consumer = new KafkaConsumer<>(properties);
+            consumer.subscribe(Collections.singletonList(config.getTopic()));
+        }
+        
     }
     
     // =========================================================================
