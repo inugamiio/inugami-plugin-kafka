@@ -31,6 +31,12 @@ Also contains monitoring producer who send data to Kafka topic.
 |Allow to escape JSON quot from kafka message
 
 
+|enableConsumer
+|
+|`true`
+|Allow to enable consume kafka topic
+
+
 
 
 
@@ -215,8 +221,8 @@ Also contains monitoring producer who send data to Kafka topic.
 
 |metricsNumSample
 |
-|Long
-|30000L
+|Integer
+|30000
 |The number of samples maintained to compute metrics.
 
 
@@ -261,12 +267,6 @@ Also contains monitoring producer who send data to Kafka topic.
 |true
 |Whether internal topics matching a subscribed pattern should be excluded from the subscription. It is always possible to explicitly subscribe to an internal topic.
 
-
-|defaultExcludeInternalTopics
-|
-|Boolean
-|true
-|
 
 
 |leaveGroupOnClose

@@ -46,7 +46,7 @@ public class KafkaProvider extends AbstractProvider implements Provider, Provide
         /* OPTIONAL */
         builder.setGroupInstanceId(config.optionnal().grab("groupeInstanceId"));
         builder.setMaxPoolRecords(config.optionnal().grabInt("maxPoolRecords"));
-        builder.setMaxPoolInterval(config.optionnal().grabInt("maxPoolInterval"));
+        builder.setMaxPoolInterval(config.optionnal().grabInt("maxPoolInterval",1000));
         builder.setSessionTimeout(config.optionnal().grabInt("sessionTimeout"));
         builder.setHeartBeatMs(config.optionnal().grabInt("heartBeatMs"));
         builder.setEnableAutoCommit(config.optionnal().grabBoolean("enableAutoComit", true));
@@ -65,7 +65,7 @@ public class KafkaProvider extends AbstractProvider implements Provider, Provide
         builder.setReconnectBackoffMs(config.optionnal().grabLong("reconnectBackoffMs", 50L));
         builder.setRetryBackoff(config.optionnal().grabLong("retryBackoff", 100L));
         builder.setMetricSampleWindowMs(config.optionnal().grabLong("metricsSampleWindowMs", 30000L));
-        builder.setMetricNumSamples(config.optionnal().grabLong("metricsNumSample", 30000L));
+        builder.setMetricNumSamples(config.optionnal().grabInt("metricsNumSample", 30000));
         builder.setMetricsRecordingLevel(config.optionnal().grab("metricsRecordingLevel"));
         builder.setCheckCrcs(config.optionnal().grabBoolean("checkCrcs", true));
         builder.setConnectionsMaxIdleMs(config.optionnal().grabLong("connectionsMaxIdleMs", 60000L));
@@ -73,7 +73,6 @@ public class KafkaProvider extends AbstractProvider implements Provider, Provide
         builder.setDefaultApiTimeoutMs(config.optionnal().grabInt("defaultApiTimeoutMs", 60000));
         
         builder.setExcludeInternalTopics(config.optionnal().grabBoolean("excludeInternalTopics", true));
-        builder.setDefaultExcludeInternalTopics(config.optionnal().grabBoolean("defaultExcludeInternalTopics", true));
         builder.setLeaveGroupOnClose(config.optionnal().grabBoolean("leaveGroupOnClose", true));
         builder.setIsolationLevel(config.optionnal().grab("isolationLevel"));
         builder.setAllowAutoCreateTopics(config.optionnal().grabBoolean("allowAutoCreateTopics", true));
@@ -104,8 +103,10 @@ public class KafkaProvider extends AbstractProvider implements Provider, Provide
         }
         
         final String defaultChannel = config.grabOrDefault("defaultChannel", "globale");
+        final boolean enableConsumer = config.grabBoolean("enableConsumer", true);
         
-        this.kafkaService = new KafkaService(builder.build(), getName(), defaultChannel, providerHandler);
+        this.kafkaService = new KafkaService(builder.build(), getName(), defaultChannel, providerHandler,
+                                             enableConsumer);
     }
     
     // =========================================================================

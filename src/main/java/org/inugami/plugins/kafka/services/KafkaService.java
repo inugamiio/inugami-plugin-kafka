@@ -20,10 +20,12 @@ import org.inugami.api.ctx.BootstrapContext;
 import org.inugami.api.ctx.DynamicEventProcessor;
 import org.inugami.api.functionnals.ApplyIfNotNull;
 import org.inugami.commons.spi.SpiLoader;
+import org.inugami.commons.threads.MonitoredThread;
+import org.inugami.commons.threads.MonitoredThreadFactory;
 import org.inugami.plugins.kafka.provider.KafkaProviderHandler;
 import org.inugami.plugins.kafka.provider.KafkaResultEvent;
 
-public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIfNotNull {
+public class KafkaService implements BootstrapContext<Object>, ApplyIfNotNull {
     // =========================================================================
     // ATTRIBUTES
     // =========================================================================
@@ -35,25 +37,33 @@ public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIf
     
     private final KafkaConfig           config;
     
-    private Consumer<Long, String>      consumer;
-    
     private final KafkaProviderHandler  providerHandler;
     
     private final DynamicEventProcessor dynamicEventProcessor;
     
     private final String                defaultChannel;
     
+    private final Thread                consumerThread;
+    
     // =========================================================================
     // CONSTRUCTORS
     // =========================================================================
     public KafkaService(final KafkaConfig config, final String providerName, final String defaultChannel,
-                        final KafkaProviderHandler providerHandler) {
+                        final KafkaProviderHandler providerHandler, boolean enableConsumer) {
         this.config = config;
         this.providerName = providerName;
         properties = buildProperties(config);
         this.providerHandler = providerHandler;
         this.defaultChannel = defaultChannel;
         dynamicEventProcessor = new SpiLoader().loadSpiSingleService(DynamicEventProcessor.class);
+        
+        this.consumerThread = enableConsumer ? new MonitoredThreadFactory(KafkaService.class.getSimpleName(),
+                                                                          true).newThread(new KafkaConsumerThread())
+                                             : null;
+        
+        if (consumerThread != null) {
+            consumerThread.start();
+        }
     }
     
     // =========================================================================
@@ -98,7 +108,6 @@ public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIf
         applyIfNotNull(config.getRequestTimeoutMs()                , (value)->props.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG,value));
         applyIfNotNull(config.getDefaultApiTimeoutMs()             , (value)->props.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG,value));
         applyIfNotNull(config.getExcludeInternalTopics()           , (value)->props.put(ConsumerConfig.EXCLUDE_INTERNAL_TOPICS_CONFIG,value));
-        applyIfNotNull(config.getDefaultExcludeInternalTopics()    , (value)->props.put(ConsumerConfig.DEFAULT_EXCLUDE_INTERNAL_TOPICS,value));
         applyIfNotNull(config.getLeaveGroupOnClose()               , (value)->props.put("internal.leave.group.on.close",value));
         applyIfNotNull(config.getIsolationLevel()                  , (value)->props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG,value));
         applyIfNotNull(config.getAllowAutoCreateTopics()           , (value)->props.put(ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG,value));
@@ -127,51 +136,10 @@ public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIf
     // =========================================================================
     // Runnable & BootstrapContext
     // =========================================================================
-    @Override
-    public void run() {
-        createConsumer();
-        consume();
-    }
     
     @Override
     public void shutdown(final Object ctx) {
         consume = false;
-        if (consumer != null) {
-            consumer.close();
-        }
-    }
-    
-    // =========================================================================
-    // CONSUMER
-    // =========================================================================
-    private void consume() {
-        
-        while (consume) {
-            final ConsumerRecords<Long, String> consumerRecords = consumer.poll(Duration.ofMillis(config.getMaxPoolInterval()));
-            
-            final Iterator<ConsumerRecord<Long, String>> records = consumerRecords.iterator();
-            
-            while (records.hasNext()) {
-                final ConsumerRecord<Long, String> record = records.next();
-                final List<KafkaResultEvent> providerResults = providerHandler.convertToEvents(providerName, record,defaultChannel);
-                
-                for (final KafkaResultEvent resultSet : providerResults) {
-                    dynamicEventProcessor.process(resultSet.getEvent(), resultSet.getProviderResult(),
-                                                  resultSet.getChannel());
-                }
-            }
-            
-            consumer.commitAsync();
-        }
-        
-    }
-    
-    public void createConsumer() {
-        if (consumer == null) {
-            consumer = new KafkaConsumer<>(properties);
-            consumer.subscribe(Collections.singletonList(config.getTopic()));
-        }
-        
     }
     
     // =========================================================================
@@ -204,8 +172,51 @@ public class KafkaService implements Runnable, BootstrapContext<Object>, ApplyIf
     private Producer<Long, String> createProducer() {
         return new KafkaProducer<>(properties);
     }
+    
     // =========================================================================
-    // GETTERS & SETTERS
+    // THREAD
     // =========================================================================
+    private class KafkaConsumerThread implements Runnable {
+        private Consumer<Long, String> consumer;
+        Duration pollDuration;
+        
+        private void createConsumer() {
+            if (consumer == null) {
+                consumer = new KafkaConsumer<>(properties);
+                consumer.subscribe(Collections.singletonList(config.getTopic()));
+                
+                long pollDurationConfig = (long) (config.getMaxPoolInterval()*0.8);
+                pollDuration = Duration.ofMillis(pollDurationConfig);
+            }
+            
+        }
+        
+        @Override
+        public void run() {
+            createConsumer();
+            
+            while (consume) {
+                final ConsumerRecords<Long, String> consumerRecords = consumer.poll(pollDuration);
+                
+                final Iterator<ConsumerRecord<Long, String>> records = consumerRecords.iterator();
+                
+                while (records.hasNext()) {
+                    final ConsumerRecord<Long, String> record = records.next();
+                    final List<KafkaResultEvent> providerResults = providerHandler.convertToEvents(providerName, record,
+                                                                                                   defaultChannel);
+                    
+                    for (final KafkaResultEvent resultSet : providerResults) {
+                        dynamicEventProcessor.process(resultSet.getEvent(), resultSet.getProviderResult(),
+                                                      resultSet.getChannel());
+                    }
+                }
+                
+                consumer.commitAsync();
+            }
+            
+            consumer.close();
+        }
+        
+    }
     
 }

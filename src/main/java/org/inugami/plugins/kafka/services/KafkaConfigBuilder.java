@@ -72,7 +72,7 @@ public class KafkaConfigBuilder {
     
     private Long    metricSampleWindowMs;
     
-    private Long    metricNumSamples;
+    private Integer metricNumSamples;
     
     private String  metricsRecordingLevel;
     
@@ -85,8 +85,6 @@ public class KafkaConfigBuilder {
     private Integer defaultApiTimeoutMs;
     
     private Boolean excludeInternalTopics;
-    
-    private Boolean defaultExcludeInternalTopics;
     
     private Boolean leaveGroupOnClose;
     
@@ -175,7 +173,6 @@ public class KafkaConfigBuilder {
                                requestTimeoutMs,
                                defaultApiTimeoutMs,
                                excludeInternalTopics,
-                               defaultExcludeInternalTopics,
                                leaveGroupOnClose,
                                isolationLevel,
                                allowAutoCreateTopics,
@@ -294,8 +291,6 @@ public class KafkaConfigBuilder {
         builder.append(defaultApiTimeoutMs);
         builder.append(", excludeInternalTopics=");
         builder.append(excludeInternalTopics);
-        builder.append(", defaultExcludeInternalTopics=");
-        builder.append(defaultExcludeInternalTopics);
         builder.append(", leaveGroupOnClose=");
         builder.append(leaveGroupOnClose);
         builder.append(", isolationLevel=");
@@ -582,11 +577,11 @@ public class KafkaConfigBuilder {
         return this;
     }
     
-    public Long getMetricNumSamples() {
+    public Integer getMetricNumSamples() {
         return metricNumSamples;
     }
     
-    public KafkaConfigBuilder setMetricNumSamples(final Long metricNumSamples) {
+    public KafkaConfigBuilder setMetricNumSamples(final Integer metricNumSamples) {
         this.metricNumSamples = metricNumSamples;
         return this;
     }
@@ -642,15 +637,6 @@ public class KafkaConfigBuilder {
     
     public KafkaConfigBuilder setExcludeInternalTopics(final Boolean excludeInternalTopics) {
         this.excludeInternalTopics = excludeInternalTopics;
-        return this;
-    }
-    
-    public Boolean getDefaultExcludeInternalTopics() {
-        return defaultExcludeInternalTopics;
-    }
-    
-    public KafkaConfigBuilder setDefaultExcludeInternalTopics(final Boolean defaultExcludeInternalTopics) {
-        this.defaultExcludeInternalTopics = defaultExcludeInternalTopics;
         return this;
     }
     

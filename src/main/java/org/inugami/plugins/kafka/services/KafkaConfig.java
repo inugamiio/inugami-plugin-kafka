@@ -59,7 +59,7 @@ public class KafkaConfig {
     
     private final Long    metricSampleWindowMs;
     
-    private final Long    metricNumSamples;
+    private final Integer    metricNumSamples;
     
     private final String  metricsRecordingLevel;
     
@@ -72,8 +72,6 @@ public class KafkaConfig {
     private final Integer defaultApiTimeoutMs;
     
     private final Boolean excludeInternalTopics;
-    
-    private final Boolean defaultExcludeInternalTopics;
     
     private final Boolean leaveGroupOnClose;
     
@@ -121,15 +119,15 @@ public class KafkaConfig {
                               final Integer maxPartitionFetchBytes, final Integer sendBuffer,
                               final Integer receiveBuffer, final String clientId, final String clientRack,
                               final Long reconnectBackoffMs, final Long retryBackoff, final Long metricSampleWindowMs,
-                              final Long metricNumSamples, final String metricsRecordingLevel, final Boolean checkCrcs,
+                              final Integer metricNumSamples, final String metricsRecordingLevel, final Boolean checkCrcs,
                               final Long connectionsMaxIdleMs, final Integer requestTimeoutMs,
                               final Integer defaultApiTimeoutMs, final Boolean excludeInternalTopics,
-                              final Boolean defaultExcludeInternalTopics, final Boolean leaveGroupOnClose,
-                              final String isolationLevel, final Boolean allowAutoCreateTopics, final Integer batchSize,
-                              final String acks, final Long lingerMs, final Integer deliveryTimeoutMs,
-                              final Integer maxRequestSize, final Long maxBlockMs, final Long bufferMemory,
-                              final String compressionType, final Integer maxInFlightRequestsPerConnection,
-                              final Integer retries, final Boolean enableIdempotence, final Integer transactionTimeout,
+                              final Boolean leaveGroupOnClose, final String isolationLevel,
+                              final Boolean allowAutoCreateTopics, final Integer batchSize, final String acks,
+                              final Long lingerMs, final Integer deliveryTimeoutMs, final Integer maxRequestSize,
+                              final Long maxBlockMs, final Long bufferMemory, final String compressionType,
+                              final Integer maxInFlightRequestsPerConnection, final Integer retries,
+                              final Boolean enableIdempotence, final Integer transactionTimeout,
                               final String transactionalId) {
         super();
         this.bootstrapServers = bootstrapServers;
@@ -166,7 +164,6 @@ public class KafkaConfig {
         this.requestTimeoutMs = requestTimeoutMs;
         this.defaultApiTimeoutMs = defaultApiTimeoutMs;
         this.excludeInternalTopics = excludeInternalTopics;
-        this.defaultExcludeInternalTopics = defaultExcludeInternalTopics;
         this.leaveGroupOnClose = leaveGroupOnClose;
         this.isolationLevel = isolationLevel;
         this.allowAutoCreateTopics = allowAutoCreateTopics;
@@ -260,8 +257,6 @@ public class KafkaConfig {
         builder.append(defaultApiTimeoutMs);
         builder.append(", excludeInternalTopics=");
         builder.append(excludeInternalTopics);
-        builder.append(", defaultExcludeInternalTopics=");
-        builder.append(defaultExcludeInternalTopics);
         builder.append(", leaveGroupOnClose=");
         builder.append(leaveGroupOnClose);
         builder.append(", isolationLevel=");
@@ -410,7 +405,7 @@ public class KafkaConfig {
         return metricSampleWindowMs;
     }
     
-    public Long getMetricNumSamples() {
+    public Integer getMetricNumSamples() {
         return metricNumSamples;
     }
     
@@ -436,10 +431,6 @@ public class KafkaConfig {
     
     public Boolean getExcludeInternalTopics() {
         return excludeInternalTopics;
-    }
-    
-    public Boolean getDefaultExcludeInternalTopics() {
-        return defaultExcludeInternalTopics;
     }
     
     public Boolean getLeaveGroupOnClose() {
