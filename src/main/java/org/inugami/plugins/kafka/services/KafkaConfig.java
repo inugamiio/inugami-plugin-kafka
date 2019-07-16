@@ -12,6 +12,10 @@ public class KafkaConfig {
     
     private final Class<?> valueDeserializer;
     
+    private final Class<?> keySerializer;
+    
+    private final Class<?> valueSerializer;
+    
     private final String   topic;
     
     private final long     timeout;
@@ -59,7 +63,7 @@ public class KafkaConfig {
     
     private final Long    metricSampleWindowMs;
     
-    private final Integer    metricNumSamples;
+    private final Integer metricNumSamples;
     
     private final String  metricsRecordingLevel;
     
@@ -110,7 +114,8 @@ public class KafkaConfig {
     // CONSTRUCTORS
     // =========================================================================
     /* package */ KafkaConfig(final String bootstrapServers, final String groupId, final Class<?> keyDeserializer,
-                              final Class<?> valueDeserializer, final String topic, final long timeout,
+                              final Class<?> valueDeserializer, final Class<?> keySerializer,
+                              final Class<?> valueSerializer, final String topic, final long timeout,
                               final String groupInstanceId, final Integer maxPoolRecords, final Integer maxPoolInterval,
                               final Integer sessionTimeout, final Integer heartBeatMs, final Boolean enableAutoCommit,
                               final Integer autoComitIntervalMs, final String partitionAssignmentStrategy,
@@ -119,8 +124,8 @@ public class KafkaConfig {
                               final Integer maxPartitionFetchBytes, final Integer sendBuffer,
                               final Integer receiveBuffer, final String clientId, final String clientRack,
                               final Long reconnectBackoffMs, final Long retryBackoff, final Long metricSampleWindowMs,
-                              final Integer metricNumSamples, final String metricsRecordingLevel, final Boolean checkCrcs,
-                              final Long connectionsMaxIdleMs, final Integer requestTimeoutMs,
+                              final Integer metricNumSamples, final String metricsRecordingLevel,
+                              final Boolean checkCrcs, final Long connectionsMaxIdleMs, final Integer requestTimeoutMs,
                               final Integer defaultApiTimeoutMs, final Boolean excludeInternalTopics,
                               final Boolean leaveGroupOnClose, final String isolationLevel,
                               final Boolean allowAutoCreateTopics, final Integer batchSize, final String acks,
@@ -134,6 +139,8 @@ public class KafkaConfig {
         this.groupId = groupId;
         this.keyDeserializer = keyDeserializer;
         this.valueDeserializer = valueDeserializer;
+        this.keySerializer = keySerializer;
+        this.valueSerializer = valueSerializer;
         this.topic = topic;
         this.timeout = timeout;
         this.groupInstanceId = groupInstanceId;
@@ -188,7 +195,7 @@ public class KafkaConfig {
     
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder();
+        StringBuilder builder = new StringBuilder();
         builder.append("KafkaConfig [bootstrapServers=");
         builder.append(bootstrapServers);
         builder.append(", groupId=");
@@ -197,6 +204,10 @@ public class KafkaConfig {
         builder.append(keyDeserializer);
         builder.append(", valueDeserializer=");
         builder.append(valueDeserializer);
+        builder.append(", keySerializer=");
+        builder.append(keySerializer);
+        builder.append(", valueSerializer=");
+        builder.append(valueSerializer);
         builder.append(", topic=");
         builder.append(topic);
         builder.append(", timeout=");
@@ -292,6 +303,7 @@ public class KafkaConfig {
         builder.append("]");
         return builder.toString();
     }
+    
     // =========================================================================
     // GETTERS & SETTERS
     // =========================================================================
@@ -310,6 +322,14 @@ public class KafkaConfig {
     
     public Class<?> getValueDeserializer() {
         return valueDeserializer;
+    }
+    
+    public Class<?> getKeySerializer() {
+        return keySerializer;
+    }
+    
+    public Class<?> getValueSerializer() {
+        return valueSerializer;
     }
     
     public String getTopic() {

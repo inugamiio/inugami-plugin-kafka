@@ -1,16 +1,30 @@
 package org.inugami.plugins.kafka.services;
 
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.ByteBufferDeserializer;
+import org.apache.kafka.common.serialization.ByteBufferSerializer;
 import org.apache.kafka.common.serialization.BytesDeserializer;
+import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.DoubleDeserializer;
+import org.apache.kafka.common.serialization.DoubleSerializer;
+import org.apache.kafka.common.serialization.ExtendedSerializer;
 import org.apache.kafka.common.serialization.FloatDeserializer;
+import org.apache.kafka.common.serialization.FloatSerializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
+import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
+import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.ShortDeserializer;
+import org.apache.kafka.common.serialization.ShortSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.common.serialization.UUIDDeserializer;
+import org.apache.kafka.common.serialization.UUIDSerializer;
 import org.inugami.api.exceptions.FatalException;
+import org.inugami.api.processors.ConfigHandler;
+
+import com.fasterxml.jackson.databind.ser.impl.BeanAsArraySerializer;
 
 public class KafkaConfigBuilder {
     // =========================================================================
@@ -23,6 +37,10 @@ public class KafkaConfigBuilder {
     private String keyDeserializer;
     
     private String valueDeserializer;
+    
+    private String keySerializer;
+    
+    private String valueSerializer;
     
     private String topic;
     
@@ -132,17 +150,97 @@ public class KafkaConfigBuilder {
               StringDeserializer.class,
               UUIDDeserializer.class
     };
+    
+    private final static Class<?>[] SERIALIZERS = {
+            ByteArraySerializer.class,
+            ByteBufferSerializer.class,
+            BeanAsArraySerializer.class,
+            DoubleSerializer.class,
+            FloatSerializer.class,
+            IntegerSerializer.class,
+            LongSerializer.class,
+            ShortSerializer.class,
+            StringSerializer.class,
+            UUIDSerializer.class
+    };
     //@formatter:on
     
     // =========================================================================
     // CONSTRUCTORS
     // =========================================================================
+    public static KafkaConfig buildConfig(final String classBehaviorName, final ConfigHandler<String, String> config) {
+        final KafkaConfigBuilder builder = new KafkaConfigBuilder();
+        builder.setBootstrapServers(config.grabOrDefault("bootstrapServers", "localhost:9092"));
+        builder.setTopic(config.grabOrDefault("topic", "test"));
+        builder.setGroupId(config.grabOrDefault("groupId", classBehaviorName));
+        builder.setTimeout(config.grabLong("timeout", 1000));
+        
+        builder.setKeyDeserializer(config.optionnal().grab("keyDeserializer"));
+        builder.setKeySerializer(config.optionnal().grab("keySerializer"));
+        
+        builder.setValueDeserializer(config.optionnal().grab("valueDeserializer"));
+        builder.setValueSerializer(config.optionnal().grab("valueSerializer"));
+        
+        /* OPTIONAL */
+        builder.setGroupInstanceId(config.optionnal().grab("groupeInstanceId"));
+        builder.setMaxPoolRecords(config.optionnal().grabInt("maxPoolRecords"));
+        builder.setMaxPoolInterval(config.optionnal().grabInt("maxPoolInterval", 1000));
+        builder.setSessionTimeout(config.optionnal().grabInt("sessionTimeout"));
+        builder.setHeartBeatMs(config.optionnal().grabInt("heartBeatMs"));
+        builder.setEnableAutoCommit(config.optionnal().grabBoolean("enableAutoComit", true));
+        builder.setAutoComitIntervalMs(config.optionnal().grabInt("autoComitIntervalMs", 5000));
+        builder.setPartitionAssignmentStrategy(config.optionnal().grab("partitionAssigmentStrategy"));
+        builder.setAutoOffsetRest(config.optionnal().grab("autoOffsetRest"));
+        builder.setFetchMinBytes(config.optionnal().grabInt("fetchMinBytes", 1));
+        builder.setFetchMaxBytes(config.optionnal().grabInt("fetchMaxBytes", 5242880));
+        builder.setFetchMaxWaitMs(config.optionnal().grabInt("fetchMaxWaitMs", 500));
+        builder.setMetadataMaxAge(config.optionnal().grabLong("metadataMaxAge", 300000L));
+        builder.setMaxPartitionFetchBytes(config.optionnal().grabInt("maxPartitionFetchBytes", 1048576));
+        builder.setSendBuffer(config.optionnal().grabInt("sendBuffer", 131072));
+        builder.setReceiveBuffer(config.optionnal().grabInt("receiveBuffer", 65536));
+        builder.setClientId(config.optionnal().grabOrDefault("clientId", classBehaviorName));
+        builder.setClientRack(config.optionnal().grab("clientRack"));
+        builder.setReconnectBackoffMs(config.optionnal().grabLong("reconnectBackoffMs", 50L));
+        builder.setRetryBackoff(config.optionnal().grabLong("retryBackoff", 100L));
+        builder.setMetricSampleWindowMs(config.optionnal().grabLong("metricsSampleWindowMs", 30000L));
+        builder.setMetricNumSamples(config.optionnal().grabInt("metricsNumSample", 30000));
+        builder.setMetricsRecordingLevel(config.optionnal().grab("metricsRecordingLevel"));
+        builder.setCheckCrcs(config.optionnal().grabBoolean("checkCrcs", true));
+        builder.setConnectionsMaxIdleMs(config.optionnal().grabLong("connectionsMaxIdleMs", 60000L));
+        builder.setRequestTimeoutMs(config.optionnal().grabInt("requestTimeout", 30000));
+        builder.setDefaultApiTimeoutMs(config.optionnal().grabInt("defaultApiTimeoutMs", 60000));
+        
+        builder.setExcludeInternalTopics(config.optionnal().grabBoolean("excludeInternalTopics", true));
+        builder.setLeaveGroupOnClose(config.optionnal().grabBoolean("leaveGroupOnClose", true));
+        builder.setIsolationLevel(config.optionnal().grab("isolationLevel"));
+        builder.setAllowAutoCreateTopics(config.optionnal().grabBoolean("allowAutoCreateTopics", true));
+        
+        /* PRODUCER */
+        builder.setBatchSize(config.optionnal().grabInt("batchSize", 16384));
+        builder.setAcks(config.optionnal().grab("acks", "1"));
+        builder.setLingerMs(config.optionnal().grabLong("lingerMs", 0L));
+        builder.setDeliveryTimeoutMs(config.optionnal().grabInt("deliveryTimeoutMs", 120000));
+        builder.setMaxRequestSize(config.optionnal().grabInt("maxRequestSize", 1048576));
+        builder.setMaxBlockMs(config.optionnal().grabLong("maxBlockMs", 60000));
+        builder.setBufferMemory(config.optionnal().grabLong("bufferMemory", 33554432));
+        builder.setCompressionType(config.optionnal().grab("compressionType", "none"));
+        builder.setMaxInFlightRequestsPerConnection(config.optionnal().grabInt("maxInFlightRequestsPerConnection", 5));
+        builder.setRetries(config.optionnal().grabInt("retries", 50));
+        builder.setEnableIdempotence(config.optionnal().grabBoolean("enableIdempotence", false));
+        builder.setTransactionTimeout(config.optionnal().grabInt("transactionTimeout", 60000));
+        builder.setTransactionalId(config.optionnal().grab("transactionId"));
+        
+        return builder.build();
+    }
+    
     public KafkaConfig build() {
        //@formatter:off
         return new KafkaConfig(bootstrapServers,
                                groupId,
                                resolveDeserializer(keyDeserializer, LongDeserializer.class),
-                               resolveDeserializer(valueDeserializer, StringDeserializer.class),
+                               resolveDeserializer(keyDeserializer, StringDeserializer.class),
+                               resolveSerializer(keySerializer, LongSerializer.class),
+                               resolveSerializer(valueSerializer, StringSerializer.class),
                                topic,
                                timeout,
                                groupInstanceId,
@@ -193,12 +291,20 @@ public class KafkaConfigBuilder {
     }
     
     private Class<?> resolveDeserializer(final String value, final Class<?> defaultClass) {
+        return resolverClass(value, defaultClass, DESERIALIZERS);
+    }
+    
+    private Class<?> resolveSerializer(final String value, final Class<?> defaultClass) {
+        return resolverClass(value, defaultClass, SERIALIZERS);
+    }
+    
+    private Class<?> resolverClass(final String value, final Class<?> defaultClass, Class<?>[] classes) {
         Class<?> result = (value == null) || value.trim().isEmpty() ? defaultClass : null;
         
         if (result == null) {
-            for (int i = DESERIALIZERS.length - 1; i >= 0; i--) {
-                if (DESERIALIZERS[i].getName().equalsIgnoreCase(value)) {
-                    result = DESERIALIZERS[i];
+            for (int i = classes.length - 1; i >= 0; i--) {
+                if (classes[i].getName().equalsIgnoreCase(value)) {
+                    result = classes[i];
                     break;
                 }
             }
@@ -381,6 +487,24 @@ public class KafkaConfigBuilder {
     
     public KafkaConfigBuilder setTimeout(final long timeout) {
         this.timeout = timeout;
+        return this;
+    }
+    
+    public String getKeySerializer() {
+        return keySerializer;
+    }
+    
+    public KafkaConfigBuilder setKeySerializer(String keySerializer) {
+        this.keySerializer = keySerializer;
+        return this;
+    }
+    
+    public String getValueSerializer() {
+        return valueSerializer;
+    }
+    
+    public KafkaConfigBuilder setValueSerializer(String valueSerializer) {
+        this.valueSerializer = valueSerializer;
         return this;
     }
     

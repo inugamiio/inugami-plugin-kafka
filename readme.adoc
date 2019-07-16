@@ -17,7 +17,7 @@ Also contains monitoring producer who send data to Kafka topic.
 |providerHandler
 |
 |`defaultKafkaProviderHandler`
-|SPI component name who implement `org.inugami.plugins.kafka.provider.KafkaProviderHandler` interface.
+|SPI component name who implement `org.inugami.plugins.kafka.provider.KafkaProviderHandler` interface. Allow to convert topic message to inugami event. 
 
 |defaultChannel
 |
@@ -37,6 +37,16 @@ Also contains monitoring producer who send data to Kafka topic.
 |Allow to enable consume kafka topic
 
 
+|producerHandler
+|
+|`DefaultKafkaProducerHandler`
+|SPI component name who implement `org.inugami.plugins.kafka.commons.KafkaProducerHandler` interface. This component allows to map data before sending to kafka topic.
+
+
+|monitoringHandler
+|
+|`DefaultKafkaMonitoringHandler`
+|SPI component name who implement `org.inugami.plugins.kafka.monitoring.KafKaMonitoringHandler` interface. This component allows to map monitoring data for kafka topic.
 
 
 

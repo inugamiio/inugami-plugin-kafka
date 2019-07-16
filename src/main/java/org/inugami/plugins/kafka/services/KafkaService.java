@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -19,9 +22,12 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 import org.inugami.api.ctx.BootstrapContext;
 import org.inugami.api.ctx.DynamicEventProcessor;
 import org.inugami.api.functionnals.ApplyIfNotNull;
+import org.inugami.api.loggers.Loggers;
+import org.inugami.api.models.data.JsonObject;
+import org.inugami.api.processors.ConfigHandler;
 import org.inugami.commons.spi.SpiLoader;
-import org.inugami.commons.threads.MonitoredThread;
 import org.inugami.commons.threads.MonitoredThreadFactory;
+import org.inugami.plugins.kafka.commons.KafkaProducerHandler;
 import org.inugami.plugins.kafka.provider.KafkaProviderHandler;
 import org.inugami.plugins.kafka.provider.KafkaResultEvent;
 
@@ -29,27 +35,36 @@ public class KafkaService implements BootstrapContext<Object>, ApplyIfNotNull {
     // =========================================================================
     // ATTRIBUTES
     // =========================================================================
-    private boolean                     consume = true;
+    private final AtomicBoolean                            consume       = new AtomicBoolean(true);
     
-    private final String                providerName;
+    private final AtomicBoolean                            produce       = new AtomicBoolean(true);
     
-    private final Properties            properties;
+    private final String                                   providerName;
     
-    private final KafkaConfig           config;
+    private final Properties                               properties;
     
-    private final KafkaProviderHandler  providerHandler;
+    private final KafkaConfig                              config;
     
-    private final DynamicEventProcessor dynamicEventProcessor;
+    private final KafkaProviderHandler                     providerHandler;
     
-    private final String                defaultChannel;
+    private final DynamicEventProcessor                    dynamicEventProcessor;
     
-    private final Thread                consumerThread;
+    private final String                                   defaultChannel;
+    
+    private final Thread                                   consumerThread;
+    
+    private final KafkaProducerHandler                     producerHandler;
+    
+    private final Thread                                   producerThread;
+    
+    private final static ConcurrentLinkedQueue<JsonObject> producerQueue = new ConcurrentLinkedQueue<>();
     
     // =========================================================================
     // CONSTRUCTORS
     // =========================================================================
     public KafkaService(final KafkaConfig config, final String providerName, final String defaultChannel,
-                        final KafkaProviderHandler providerHandler, boolean enableConsumer) {
+                        final KafkaProviderHandler providerHandler, boolean enableConsumer, boolean enableProducer,
+                        final KafkaProducerHandler producerHandler) {
         this.config = config;
         this.providerName = providerName;
         properties = buildProperties(config);
@@ -64,11 +79,36 @@ public class KafkaService implements BootstrapContext<Object>, ApplyIfNotNull {
         if (consumerThread != null) {
             consumerThread.start();
         }
+        
+        this.producerThread = enableConsumer ? new MonitoredThreadFactory(KafkaService.class.getSimpleName()
+                                                                          + "_producer",
+                                                                          true).newThread(new KafkaProducerThread())
+                                             : null;
+        if (producerThread != null) {
+            producerThread.start();
+        }
+        
+        this.producerHandler = producerHandler;
     }
     
     // =========================================================================
     // INITIALIZE
     // =========================================================================
+    public static <T> T resolveHandler(ConfigHandler<String, String> config, String propertyKey,
+                                       T defaultImplementation, Class<? extends T> handlerClass) {
+        T result = null;
+        
+        final String handlerName = config.optionnal().grab(propertyKey);
+        
+        if (handlerName != null) {
+            result = new SpiLoader().loadSpiService(handlerName, handlerClass);
+        }
+        else {
+            result = defaultImplementation;
+        }
+        return result;
+    }
+    
     private Properties buildProperties(final KafkaConfig config) {
         final Properties props = new Properties();
         
@@ -76,6 +116,9 @@ public class KafkaService implements BootstrapContext<Object>, ApplyIfNotNull {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, config.getGroupId());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, config.getKeyDeserializer());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, config.getValueDeserializer());
+        
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, config.getKeySerializer());
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, config.getValueSerializer());
         
         /* OPTIONAL */
         //@formatter:off
@@ -139,53 +182,24 @@ public class KafkaService implements BootstrapContext<Object>, ApplyIfNotNull {
     
     @Override
     public void shutdown(final Object ctx) {
-        consume = false;
+        consume.set(false);
+        produce.set(false);
     }
     
     // =========================================================================
-    // PRODUCER
-    // =========================================================================
-    public void runProducer(final int sendMessageCount) throws Exception {
-        final Producer<Long, String> producer = createProducer();
-        final long time = System.currentTimeMillis();
-        
-        try {
-            for (long index = time; index < (time + sendMessageCount); index++) {
-                final ProducerRecord<Long, String> record = new ProducerRecord<>("test", index, "Hello Mom " + index);
-                
-                final RecordMetadata metadata = producer.send(record).get();
-                
-                final long elapsedTime = System.currentTimeMillis() - time;
-                System.out.printf("sent record(key=%s value=%s) " + "meta(partition=%d, offset=%d) time=%d\n",
-                                  record.key(), record.value(), metadata.partition(), metadata.offset(), elapsedTime);
-                producer.flush();
-                
-                Thread.currentThread().sleep(1000);
-            }
-        }
-        finally {
-            producer.flush();
-            producer.close();
-        }
-    }
-    
-    private Producer<Long, String> createProducer() {
-        return new KafkaProducer<>(properties);
-    }
-    
-    // =========================================================================
-    // THREAD
+    // THREAD CONSUMER
     // =========================================================================
     private class KafkaConsumerThread implements Runnable {
         private Consumer<Long, String> consumer;
-        Duration pollDuration;
+        
+        Duration                       pollDuration;
         
         private void createConsumer() {
             if (consumer == null) {
                 consumer = new KafkaConsumer<>(properties);
                 consumer.subscribe(Collections.singletonList(config.getTopic()));
                 
-                long pollDurationConfig = (long) (config.getMaxPoolInterval()*0.8);
+                long pollDurationConfig = (long) (config.getMaxPoolInterval() * 0.8);
                 pollDuration = Duration.ofMillis(pollDurationConfig);
             }
             
@@ -195,7 +209,7 @@ public class KafkaService implements BootstrapContext<Object>, ApplyIfNotNull {
         public void run() {
             createConsumer();
             
-            while (consume) {
+            while (consume.get()) {
                 final ConsumerRecords<Long, String> consumerRecords = consumer.poll(pollDuration);
                 
                 final Iterator<ConsumerRecord<Long, String>> records = consumerRecords.iterator();
@@ -219,4 +233,51 @@ public class KafkaService implements BootstrapContext<Object>, ApplyIfNotNull {
         
     }
     
+    // =========================================================================
+    // THREAD PRODUCER
+    // =========================================================================
+    public synchronized void sendMessageToKafka(List<? extends JsonObject> data) {
+        if (data != null && !data.isEmpty()) {
+            producerQueue.addAll(data);
+        }
+    }
+    
+    private class KafkaProducerThread implements Runnable {
+        private final Producer<Long, String> producer = buildProducer();
+        
+        private Producer<Long, String> buildProducer() {
+            return new KafkaProducer<>(properties);
+        }
+        
+        @Override
+        public void run() {
+            final long time = System.currentTimeMillis();
+            
+            while (produce.get()) {
+                while (!producerQueue.isEmpty()) {
+                    final JsonObject data = producerQueue.poll();
+                    sendToKafka(data);
+                }
+                producer.flush();
+            }
+            producer.close();
+        }
+        
+        private void sendToKafka(JsonObject data) {
+            JsonObject dataToSend = producerHandler == null ? data : producerHandler.convert(data);
+            if (dataToSend != null) {
+                long timestamp = System.currentTimeMillis() * 1_000_000_000 + System.nanoTime();
+                final ProducerRecord<Long, String> record = new ProducerRecord<>(config.getTopic(), timestamp,
+                                                                                 dataToSend.convertToJson());
+                try {
+                    final RecordMetadata metadata = producer.send(record).get();
+                }
+                catch (InterruptedException | ExecutionException e) {
+                    Loggers.DEBUG.error(e.getMessage(), e);
+                }
+            }
+            
+        }
+        
+    }
 }
