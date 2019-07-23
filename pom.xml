@@ -9,7 +9,7 @@
     <parent>
         <groupId>org.inugami.maven.superpom</groupId>
         <artifactId>inugami-superpom-plugin</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.2.0</version>
     </parent>
 
 
@@ -19,7 +19,7 @@
     <groupId>org.inugami.plugins</groupId>
     <artifactId>inugami-plugin-kafka</artifactId>
     <packaging>jar</packaging>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
 
 
     <!-- =======================================================================
@@ -30,7 +30,8 @@
         <super.inugami.plugin />
         <super.inugami.plugin.attach.war />
         <super.inugami.server.force.clean>true</super.inugami.server.force.clean>
-        <super.inugami.version>1.1.1-SNAPSHOT</super.inugami.version>
+        <super.inugami.version>1.2.0</super.inugami.version>
+
         <jaxb.version>2.3.0</jaxb.version>
         <!-- specify in your maven settings.xml inugami server path :
         <super.inugami.server.home>/home/user/servers/inugami</super.inugami.server.home>
@@ -90,30 +91,59 @@
     <!-- =======================================================================
     = DEPENDENCIES
     ======================================================================== -->
-    <dependencies>
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>${jaxb.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-core</artifactId>
-            <version>${jaxb.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <version>${jaxb.version}</version>
-            <scope>provided</scope>
-        </dependency>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.inugami.maven.superpom</groupId>
+                <artifactId>inugami-superpom-plugin</artifactId>
+                <version>1.0.1-SNAPSHOT</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.inugami</groupId>
+                        <artifactId>inugami_core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
 
+            <dependency>
+                <groupId>org.inugami.monitoring</groupId>
+                <version>${super.inugami.version}</version>
+                <artifactId>inugami_monitoring_api</artifactId>
+            </dependency>
+
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${jaxb.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-core</artifactId>
+                <version>${jaxb.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>${jaxb.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.inugami</groupId>
+                <artifactId>inugami_core</artifactId>
+                <version>${super.inugami.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+    <dependencies>
 
         <dependency>
             <groupId>org.inugami.monitoring</groupId>
-            <artifactId>inugami_monitoring</artifactId>
+            <artifactId>inugami_monitoring_api</artifactId>
             <version>${super.inugami.version}</version>
             <scope>provided</scope>
         </dependency>
