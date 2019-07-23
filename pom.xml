@@ -18,7 +18,7 @@
     <groupId>org.inugami.plugins</groupId>
     <artifactId>inugami-plugin-kafka</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
 
 
     <!-- =======================================================================
@@ -46,7 +46,7 @@
         <url>https://github.com/inugamiio/inugami-plugin-kafka</url>
         <connection>scm:git:git@github.com:inugamiio/inugami-plugin-kafka.git</connection>
         <developerConnection>scm:git:git@github.com:inugamiio/inugami-plugin-kafka.git</developerConnection>
-        <tag>v1.0.0</tag>
+        <tag>v0.0.0</tag>
     </scm>
 
     <distributionManagement>
