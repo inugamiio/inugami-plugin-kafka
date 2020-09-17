@@ -1,4 +1,4 @@
-package org.inugami.plugins.kafka.services;
+package io.inugami.plugins.kafka.services;
 
 public class KafkaConfig {
     // =========================================================================
