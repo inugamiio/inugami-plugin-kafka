@@ -27,7 +27,7 @@
     <properties>
         <super.env.dev />
         <super.inugami.plugin />
-        <super.inugami.plugin.attach.war />
+        <!--<super.inugami.plugin.attach.war />-->
         <super.inugami.server.force.clean>true</super.inugami.server.force.clean>
         <jaxb.version>2.3.0</jaxb.version>
         <!-- specify in your maven settings.xml inugami server path :
